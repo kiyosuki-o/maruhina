@@ -1,61 +1,71 @@
-from flask import Flask, render_template, request, jsonify
-from keras.utils import load_img, img_to_array # type: ignore
-from keras.models import load_model # type: ignore
+import streamlit as st
+import tensorflow as tf
 import numpy as np
-import os
-from werkzeug.utils import secure_filename
-
-app = Flask(__name__)
+from PIL import Image
 
 # Load the model and labels
-if not os.path.exists("trained_model.h5"):
-    raise FileNotFoundError("trained_model.h5 not found!")
-if not os.path.exists("labels.txt"):
-    raise FileNotFoundError("labels.txt not found!")
+MODEL_PATH = "trained_model.h5"
+LABELS_PATH = "labels.txt"
 
-model = load_model("trained_model.h5")
-with open("labels.txt", "r") as f:
+if not tf.io.gfile.exists(MODEL_PATH):
+    st.error("Model file not found!")
+    st.stop()
+
+if not tf.io.gfile.exists(LABELS_PATH):
+    st.error("Labels file not found!")
+    st.stop()
+
+# Load model and labels
+model = tf.keras.models.load_model(MODEL_PATH)
+with open(LABELS_PATH, "r") as f:
     class_names = [line.strip() for line in f]
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Preprocess image for prediction
-def preprocess_image(image_path):
-    image = load_img(image_path, target_size=(64, 64))
-    input_arr = img_to_array(image)
+# Function to preprocess the image
+def preprocess_image(image):
+    image = image.resize((64, 64))  # Resize to model input size
+    input_arr = tf.keras.preprocessing.image.img_to_array(image)
     input_arr = np.expand_dims(input_arr, axis=0)  # Convert single image to batch
     return input_arr
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# Function to predict the class
+def predict_image(image):
+    input_arr = preprocess_image(image)
+    predictions = model.predict(input_arr)
+    predicted_index = np.argmax(predictions)
+    return class_names[predicted_index]
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
+# Streamlit UI
+st.title("Fruits & Vegetables Recognition System")
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+# Sidebar
+st.sidebar.title("Navigation")
+app_mode = st.sidebar.selectbox("Select Page", ["Home", "About Project", "Prediction"])
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+# Home Page
+if app_mode == "Home":
+    st.header("Welcome to the Fruits & Vegetables Recognition System")
+    st.image("home_img.jpg", use_column_width=True)
 
-    if file:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-        file.save(file_path)
+# About Page
+elif app_mode == "About Project":
+    st.header("About the Project")
+    st.subheader("Dataset Information")
+    st.text("This project recognizes fruits and vegetables using a deep learning model.")
+    st.code("Fruits: banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
+    st.code("Vegetables: cucumber, carrot, capsicum, onion, potato, lemon, tomato, radish, beetroot, cabbage, lettuce, spinach, soybean, cauliflower, bell pepper, chili pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalapeño, ginger, garlic, peas, eggplant.")
 
-        # Process and predict
-        input_arr = preprocess_image(file_path)
-        predictions = model.predict(input_arr)
-        predicted_index = np.argmax(predictions)
-        predicted_label = class_names[predicted_index]
-
-        return jsonify({"prediction": predicted_label})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# Prediction Page
+elif app_mode == "Prediction":
+    st.header("Model Prediction")
+    uploaded_file = st.file_uploader("Upload an Image", type=["jpg", "jpeg", "png"])
+    
+    if uploaded_file:
+        # Display uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+        
+        # Predict button
+        if st.button("Predict"):
+            st.info("Predicting...")
+            prediction = predict_image(image)
+            st.success(f"Model Prediction: {prediction}")

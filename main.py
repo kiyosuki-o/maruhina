@@ -1,30 +1,32 @@
+
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-# Load the model and labels
+# Paths for model and labels
 MODEL_PATH = "trained_model.h5"
 LABELS_PATH = "labels.txt"
 
+# Check if the files exist
 if not tf.io.gfile.exists(MODEL_PATH):
-    st.error("Model file not found!")
+    st.error(f"Model file not found at {MODEL_PATH}!")
     st.stop()
 
 if not tf.io.gfile.exists(LABELS_PATH):
-    st.error("Labels file not found!")
+    st.error(f"Labels file not found at {LABELS_PATH}!")
     st.stop()
 
-# Load model and labels
+# Load the trained model and labels
 model = tf.keras.models.load_model(MODEL_PATH)
 with open(LABELS_PATH, "r") as f:
     class_names = [line.strip() for line in f]
 
 # Function to preprocess the image
 def preprocess_image(image):
-    image = image.resize((64, 64))  # Resize to model input size
+    image = image.resize((64, 64))  # Resize image to model's input size
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.expand_dims(input_arr, axis=0)  # Convert single image to batch
+    input_arr = np.expand_dims(input_arr, axis=0)  # Add batch dimension
     return input_arr
 
 # Function to predict the class
@@ -37,7 +39,7 @@ def predict_image(image):
 # Streamlit UI
 st.title("Fruits & Vegetables Recognition System")
 
-# Sidebar
+# Sidebar navigation
 st.sidebar.title("Navigation")
 app_mode = st.sidebar.selectbox("Select Page", ["Home", "About Project", "Prediction"])
 
@@ -51,8 +53,7 @@ elif app_mode == "About Project":
     st.header("About the Project")
     st.subheader("Dataset Information")
     st.text("This project recognizes fruits and vegetables using a deep learning model.")
-    st.code("Fruits: banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
-    st.code("Vegetables: cucumber, carrot, capsicum, onion, potato, lemon, tomato, radish, beetroot, cabbage, lettuce, spinach, soybean, cauliflower, bell pepper, chili pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalapeño, ginger, garlic, peas, eggplant.")
+    st.code("Classes: banana, apple, carrot, onion, tomato, etc.")
 
 # Prediction Page
 elif app_mode == "Prediction":

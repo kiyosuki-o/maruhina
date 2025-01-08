@@ -1,9 +1,4 @@
-flask==2.2.5
-flask-CORS==3.0.10
-tensorflow==2.12.0
-keras==2.12.0
-pillow==9.4.0
-numpy==1.24.0
-pandas==1.5.3
-scikit-learn==1.2.0
-joblib==1.2.0
+streamlit==1.25.0
+tensorflow==2.10.0
+numpy==1.23.5
+Pillow==9.4.0

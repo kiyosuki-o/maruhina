@@ -24,4 +24,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Streamlit app
-        run: streamlit run app.py
+        run: streamlit run main.py --server.port $PORT --server.headless true

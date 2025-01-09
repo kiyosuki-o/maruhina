@@ -1,6 +1,4 @@
-streamlit
-numpy
-Pillow
-tensorflow
-logging
-
+streamlit==1.25.0
+tensorflow-cpu==2.10.0
+numpy==1.23.5
+Pillow==9.4.0
